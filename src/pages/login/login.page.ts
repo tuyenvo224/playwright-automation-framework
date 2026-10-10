@@ -1,30 +1,21 @@
+import { BasePage } from "@pages/base.page";
 import { Locator, Page } from "@playwright/test";
 
-export class LoginPage {
-    page: Page;
+export class LoginPage extends BasePage {
     readonly userNameLogin: Locator;
     readonly passwordLogin: Locator;
-    loginButton: Locator;
-    baseUrl: string;
-
-    dashboardHeadingLoc: Locator;
-    atAGlanceHeadingLoc: Locator;
-    activityHeadingLoc: Locator;
+    readonly loginButton: Locator;
 
     constructor(page: Page) {
-        this.page = page;
-        this.baseUrl = process.env.BASE_URL!;
+        super(page)
         this.userNameLogin = this.page.getByRole('textbox', { name: 'Username or Email Address' });
         this.passwordLogin = this.page.getByRole('textbox', { name: 'Password' });
         this.loginButton = this.page.getByRole('button', { name: 'Log In' });
 
-        this.dashboardHeadingLoc = this.page.getByRole('heading', { name: 'Dashboard' });
-        this.atAGlanceHeadingLoc = this.page.getByRole('heading', { name: 'At a Glance' });
-        this.activityHeadingLoc = this.page.getByRole('heading', { name: 'Activity' });
     }
 
     async openPlaywrightPage() {
-        await this.page.goto(this.baseUrl);
+        await this.goto();
     }
 
     async fillUserNameLogin(userName: string) {

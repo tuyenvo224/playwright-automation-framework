@@ -1,38 +1,35 @@
 import { Locator, Page } from "@playwright/test";
-import { DashboardBasePage } from "../dashboard.base.page";
+import { DashboardBasePage } from "@pages/dashboard/dashboard.base.page";
 
 export class UserPage extends DashboardBasePage {
-    page: Page;
+    readonly usersHeadingLoc: Locator;
+    readonly addUserButtonLoc: Locator;
 
-    usersHeadingLoc: Locator;
-    addUserButtonLoc: Locator;
+    readonly addUserHeadingLoc: Locator;
 
-    addUserHeadingLoc: Locator;
+    readonly userNameTextboxLoc: Locator;
+    readonly emailTextboxLoc: Locator;
+    readonly firstNameTextboxLoc: Locator;
+    readonly lastNameTextboxLoc: Locator;
+    readonly passwordTextBoxLoc: Locator;
+    readonly roleComboboxLoc: Locator;
+    readonly submitAddUserLoc: Locator;
+    readonly msgCreateUserLoc: Locator;
 
-    userNameTextboxLoc: Locator;
-    emailTextboxLoc: Locator;
-    firstNameTextboxLoc: Locator;
-    lastNameTextboxLoc: Locator;
-    passwordTextBoxLoc: Locator;
-    roleComboboxLoc: Locator;
-    submitAddUserLoc: Locator;
-    msgCreateUserLoc: Locator;
+    readonly searchUserTextboxLoc: Locator;
+    readonly searchUserButtonLoc: Locator;
+    readonly deleteUserButtonLoc: Locator;
+    readonly submitDeleteUserLoc: Locator;
+    readonly optionDeleteUserLoc: Locator;
+    readonly msgDeleteUserLoc: Locator;
 
-    searchUserTextboxLoc: Locator;
-    searchUserButtonLoc: Locator;
-    deleteUserButtonLoc: Locator;
-    submitDeleteUserLoc: Locator;
-    optionDeleteUserLoc: Locator;
-    msgDeleteUserLoc: Locator;
-
-    errorEmailMsgLoc: Locator;
-    errorUserNameMsgLoc: Locator;
-    duplicateUserNameMsgLoc: Locator;
-    duplicatedEmailMsgLoc: Locator;
+    readonly errorEmailMsgLoc: Locator;
+    readonly errorUserNameMsgLoc: Locator;
+    readonly duplicateUserNameMsgLoc: Locator;
+    readonly duplicatedEmailMsgLoc: Locator;
 
     constructor(page: Page) {
         super(page);
-        this.page = page;
 
         this.usersHeadingLoc = this.page.getByRole('heading', { name: 'Users', exact: true });
         this.addUserButtonLoc = this.page.locator('#wpbody-content').getByRole('link', { name: 'Add User' });

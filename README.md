@@ -17,14 +17,30 @@ Toàn bộ suy nghĩ, phân tích và quyết định thiết kế của project
 
 ```
 playwright-automation-framework/
-├── pom/                  # Page Object Model — mô tả trang web (dashboard/ + storefront/)
-├── tests/                # Kịch bản test — mirror 1-1 theo cấu trúc pom/
-├── fixtures/              # Custom fixture (VD: đăng nhập sẵn trước khi test)
-├── utils/                 # Hàm thuần: sinh dữ liệu test ngẫu nhiên...
-├── project-documentations/ # Tài liệu thiết kế (6 file .md ở trên)
-├── .env.example           # Mẫu biến môi trường (không chứa giá trị thật)
-├── playwright.config.ts   # Cấu hình chạy test
-└── tsconfig.json          # Cấu hình TypeScript
+├── src/                       # Toàn bộ code hỗ trợ test (không chứa test)
+│   ├── pages/                 # Page Object Model — base.page.ts + login/ + dashboard/ + storefront/
+│   ├── fixtures/              # Custom fixture (VD: đăng nhập sẵn trước khi test)
+│   └── utils/                 # Hàm thuần: sinh dữ liệu test ngẫu nhiên...
+├── tests/                     # Kịch bản test — mirror 1-1 theo cấu trúc src/pages/
+├── project-documentations/    # Tài liệu thiết kế (6 file .md ở trên)
+├── .env.example               # Mẫu biến môi trường (không chứa giá trị thật)
+├── playwright.config.ts       # Cấu hình chạy test
+└── tsconfig.json              # Cấu hình TypeScript + path alias
+```
+
+Code trong `src/` được import qua **path alias** khai trong `tsconfig.json`, không dùng đường dẫn tương đối `../../../`:
+
+| Alias | Trỏ tới |
+|---|---|
+| `@pages/*` | `src/pages/*` |
+| `@fixtures/*` | `src/fixtures/*` |
+| `@utils/*` | `src/utils/*` |
+| `@data/*` | `src/data/*` (dành sẵn cho dữ liệu test, chưa sử dụng) |
+
+```ts
+import { UserPage } from '@pages/dashboard/users/add-user.page';
+import { test } from '@fixtures/dashboard-fixture';
+import { randomUserName } from '@utils/random-data.util';
 ```
 
 Chi tiết đầy đủ về lý do thiết kế từng phần: xem [02-folder-design.md](project-documentations/02-folder-design.md) và [03-pom-design.md](project-documentations/03-pom-design.md).
@@ -47,7 +63,7 @@ cp .env.example .env
 Các biến cần khai báo trong `.env` (xem thêm [06-coding-convention-design.md §6](project-documentations/06-coding-convention-design.md#6-quản-lý-biến-môi-trường)):
 
 ```
-BASE_URL=https://pw-practice-dev.playwrightvn.com/wp-admin
+BASE_URL=<URL trang admin, VD: https://pw-practice-dev.playwrightvn.com/wp-admin>
 ADMIN_USERNAME=<tài khoản admin>
 ADMIN_PASSWORD=<mật khẩu admin>
 ```
@@ -58,8 +74,35 @@ ADMIN_PASSWORD=<mật khẩu admin>
 npx playwright test                 # chạy toàn bộ test (chromium, firefox, webkit)
 npx playwright test tests/dashboard/users/add-user.spec.ts   # chạy 1 file cụ thể
 npx playwright show-report          # xem report HTML sau khi chạy xong
+npm run typecheck                   # kiểm tra lỗi TypeScript toàn project (tsc --noEmit)
 ```
 
 ## CI
 
-Project có sẵn workflow GitHub Actions tại [.github/workflows/playwright.yml](.github/workflows/playwright.yml), tự động cài dependencies, cài browser và chạy `npx playwright test` khi push/tạo Pull Request vào nhánh `main`/`master`. **Lưu ý:** vì `.env` không được commit, cần khai báo `BASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` dưới dạng GitHub Actions Secrets (Repository Settings → Secrets and variables → Actions) và truyền vào bước "Run Playwright tests" nếu muốn CI chạy được đầy đủ.
+Project có sẵn workflow GitHub Actions tại [.github/workflows/playwright.yml](.github/workflows/playwright.yml), tự động chạy khi push/tạo Pull Request vào nhánh `main`/`master`, gồm các bước:
+
+1. Cài dependencies (`npm ci`).
+2. Kiểm tra type (`npm run typecheck`) — Playwright khi chạy test **không** kiểm tra type, nên bước này chặn lỗi type/import sai đường dẫn. Đặt trước bước cài browser để nếu lỗi thì job dừng ngay, không mất thời gian tải browser.
+3. Cài browser (`npx playwright install --with-deps`).
+4. Chạy test (`npx playwright test`).
+5. Upload report HTML thành artifact `playwright-report` (giữ 30 ngày) để tải về xem trong tab **Actions** — bước này vẫn chạy kể cả khi test fail.
+
+### Biến môi trường trên CI
+
+Vì `.env` không được commit, CI lấy biến môi trường từ **GitHub Actions Secrets**. Workflow đã truyền sẵn 3 secrets vào bước "Run Playwright tests":
+
+```yaml
+- name: Run Playwright tests
+  run: npx playwright test
+  env:
+    BASE_URL: ${{ secrets.BASE_URL }}
+    ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+    ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+```
+
+Chỉ cần khai báo 3 secrets cùng tên tại **Repository Settings → Secrets and variables → Actions → New repository secret**, giá trị giống trong `.env` local. Code không cần sửa gì: trên CI không có file `.env` nên `dotenv` không ghi đè, `process.env.*` lấy đúng giá trị do workflow truyền vào.
+
+**Lưu ý:**
+- Tên secret phải trùng khớp chính xác (`BASE_URL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`); thiếu secret nào thì biến đó rỗng và các test cần login sẽ fail.
+- Khi dán giá trị secret, không để thừa dấu cách/dòng trống ở đầu hoặc cuối.
+- Pull Request tạo từ **fork** không nhận được secrets → các test cần login sẽ fail trên PR đó.

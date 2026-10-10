@@ -7,6 +7,8 @@ Tài liệu này chỉ ghi lại các tính năng và lưu ý **dựa trên ph�
 ## 1. Khu vực Dashboard (Admin — sau khi login)
 
 ### 1.1 Login / Authentication
+> Trang login nằm **trước** khu vực admin nên trong code được tách thành module riêng ở cấp cao nhất: [src/pages/login/](../src/pages/login/) ↔ [tests/login/](../tests/login/) (không nằm trong `dashboard/`).
+
 - Trang login WordPress chuẩn: 2 textbox (`Username or Email Address`, `Password`) + nút `Log In`.
 - Login thất bại hiển thị message dạng: `Error: The username {userName} is not registered on this site. If you are unsure of your username, try your email address instead.`
 - Login thành công điều hướng về `/wp-admin/`, hiển thị heading `Dashboard`, `At a Glance`, `Activity`.
@@ -46,7 +48,7 @@ Tài liệu này chỉ ghi lại các tính năng và lưu ý **dựa trên ph�
 
 ## 3. Các module đã khảo sát cấu trúc nhưng CHƯA implement (folder/file đã tạo sẵn, đang rỗng)
 
-Các khu vực này đã có sẵn khung folder trong `pom/dashboard/` và `tests/dashboard/` tương ứng theo đúng menu thật của WordPress Admin, chờ triển khai ở các giai đoạn sau:
+Các khu vực này đã có sẵn khung folder trong `src/pages/dashboard/` và `tests/dashboard/` tương ứng theo đúng menu thật của WordPress Admin, chờ triển khai ở các giai đoạn sau:
 
 - **Posts**: All Posts, Add Post, Categories, Tags
 - **Media**: Library, Add Media File

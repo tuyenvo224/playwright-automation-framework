@@ -2,7 +2,9 @@
   "name": "playwright-automation-framework",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "typecheck": "tsc --noEmit" 
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -11,6 +13,7 @@
     "@faker-js/faker": "^10.5.0",
     "@playwright/test": "^1.62.0",
     "@types/node": "^26.1.2",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "typescript": "^7.0.2"
   }
 }

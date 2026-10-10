@@ -1,31 +1,34 @@
 import { Locator, Page } from "@playwright/test";
-import { LoginPage } from "./login/login.page";
+import { BasePage } from "@pages/base.page";
 
-export class DashboardBasePage extends LoginPage {
-    page: Page;
-    usersTabLoc: Locator;
-    allUsersTabLoc: Locator
-    addUserTabLoc: Locator;
+export class DashboardBasePage extends BasePage {
+    readonly usersTabLoc: Locator;
+    readonly allUsersTabLoc: Locator
+    readonly addUserTabLoc: Locator;
 
-    hoverProfileLoc: Locator;
-    logoutLoc: Locator;
+    readonly hoverProfileLoc: Locator;
+    readonly logoutLoc: Locator;
 
-    dashboardTabLoc: Locator;
-    homeTabLoc: Locator;
-    updatesTabLoc: Locator;
+    readonly dashboardTabLoc: Locator;
+    readonly homeTabLoc: Locator;
+    readonly updatesTabLoc: Locator;
 
-    postsTabLoc: Locator;
-    mediaTabLoc: Locator;
-    pagesTabLoc: Locator;
-    commentsTabLoc: Locator;
-    profileTabLoc: Locator;
-    toolsTabLoc: Locator;
-    appearanceTabLoc: Locator;
-    pluginsTabLoc: Locator;
+    readonly postsTabLoc: Locator;
+    readonly mediaTabLoc: Locator;
+    readonly pagesTabLoc: Locator;
+    readonly commentsTabLoc: Locator;
+    readonly profileTabLoc: Locator;
+    readonly toolsTabLoc: Locator;
+    readonly appearanceTabLoc: Locator;
+    readonly pluginsTabLoc: Locator;
+
+    readonly dashboardHeadingLoc: Locator;
+    readonly atAGlanceHeadingLoc: Locator;
+    readonly activityHeadingLoc: Locator;
+
 
     constructor(page: Page) {
         super(page);
-        this.page = page;
 
         this.usersTabLoc = this.page.getByRole('link', { name: 'Users', exact: true });
         this.allUsersTabLoc = this.page.getByRole('link', { name: 'All Users', exact: true });
@@ -46,6 +49,10 @@ export class DashboardBasePage extends LoginPage {
         this.toolsTabLoc = this.page.getByRole('link', { name: 'Tools' });
         this.appearanceTabLoc = this.page.getByRole('link', { name: 'Appearance' });
         this.pluginsTabLoc = this.page.getByRole('link', { name: 'Plugins ' });
+
+        this.dashboardHeadingLoc = this.page.getByRole('heading', { name: 'Dashboard' });
+        this.atAGlanceHeadingLoc = this.page.getByRole('heading', { name: 'At a Glance' });
+        this.activityHeadingLoc = this.page.getByRole('heading', { name: 'Activity' });
     }
 
     async clickUserTab() {

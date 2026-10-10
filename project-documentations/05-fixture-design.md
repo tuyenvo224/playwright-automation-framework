@@ -4,22 +4,25 @@
 
 Gần như mọi file test trong `tests/dashboard/` đều cần login bằng tài khoản admin trước khi test. Nếu viết lặp lại 4 dòng login trong `beforeEach` của từng file, khi cách login thay đổi (ví dụ WordPress bật thêm xác thực 2 lớp) sẽ phải sửa ở rất nhiều nơi. Playwright hỗ trợ giải quyết đúng vấn đề này bằng **custom fixture**.
 
-## 2. Fixture hiện có — [fixtures/dashboard-fixture.ts](../fixtures/dashboard-fixture.ts)
+## 2. Fixture hiện có — [src/fixtures/dashboard-fixture.ts](../src/fixtures/dashboard-fixture.ts)
 
 ```ts
 import { test as base, expect } from '@playwright/test';
-import { DashboardBasePage } from '../pom/dashboard/dashboard.base.page';
+import { DashboardBasePage } from '@pages/dashboard/dashboard.base.page';
+import { LoginPage } from '@pages/login/login.page';
 
 const test = base.extend<{ dashboardBasePage: DashboardBasePage }>({
     dashboardBasePage: async ({ page }, use) => {
         const userAdmin = process.env.ADMIN_USERNAME!;
         const pswAdmin = process.env.ADMIN_PASSWORD!;
 
-        const dashboardBasePage = new DashboardBasePage(page);
-        await dashboardBasePage.openPlaywrightPage();
-        await dashboardBasePage.login(userAdmin, pswAdmin);
+        const loginPage = new LoginPage(page);          // (1) login bằng LoginPage
+        await loginPage.openPlaywrightPage();
+        await loginPage.login(userAdmin, pswAdmin);
 
-        await expect(page).toHaveURL("https://pw-practice-dev.playwrightvn.com/wp-admin/");
+        const dashboardBasePage = new DashboardBasePage(page);   // (2) cùng page, giờ đã ở trang admin
+
+        await expect(page).toHaveURL(/\/wp-admin\/$/);
         await expect(dashboardBasePage.dashboardHeadingLoc).toHaveText("Dashboard");
         await expect(dashboardBasePage.atAGlanceHeadingLoc).toHaveText("At a Glance");
         await expect(dashboardBasePage.activityHeadingLoc).toHaveText("Activity");
@@ -31,6 +34,10 @@ const test = base.extend<{ dashboardBasePage: DashboardBasePage }>({
 
 export { test };
 ```
+
+Hai điểm thay đổi so với thiết kế cũ:
+- **Login qua `LoginPage`, trả ra `DashboardBasePage`:** vì `DashboardBasePage` không còn kế thừa `LoginPage` (xem [03-pom-design.md §1](03-pom-design.md#1-sơ-đồ-kế-thừa-inheritance)), fixture dùng `LoginPage` cho bước login, sau đó tạo `DashboardBasePage` trên **cùng một `page`** để verify và trả ra cho test.
+- **Kiểm tra URL bằng regex `/\/wp-admin\/$/`** thay vì hardcode URL đầy đủ — fixture không phụ thuộc domain, đổi `BASE_URL` sang môi trường khác vẫn chạy đúng.
 
 `base.extend<{...}>({...})` tạo ra một bản `test` **mới** (không thay thế `test` gốc của Playwright), có thêm 1 "nguyên liệu" tên `dashboardBasePage` mà mọi hook/test có thể xin dùng qua tham số. Cấu trúc luôn là: code **trước** `use(...)` là **setup**, giá trị truyền vào `use(...)` là **thứ fixture trả về**, code **sau** `use(...)` (nếu có) là **teardown**.
 
@@ -47,8 +54,8 @@ Nếu để fixture trả thẳng `UserPage`, những file test không liên qua
 Import `test` từ file fixture, **không phải** từ `@playwright/test` — ví dụ [tests/dashboard/users/all-users.spec.ts](../tests/dashboard/users/all-users.spec.ts):
 ```ts
 import { expect } from '@playwright/test';
-import { UserPage } from '../../../pom/dashboard/users/add-user.page';
-import { test } from '../../../fixtures/dashboard-fixture';   // lấy test từ fixture
+import { UserPage } from '@pages/dashboard/users/add-user.page';
+import { test } from '@fixtures/dashboard-fixture';   // lấy test từ fixture
 
 test.describe("Users - all users", () => {
     let userPage: UserPage;
@@ -89,8 +96,11 @@ test.afterEach("Login by admin & delete normal user", async ({ page }) => {
     await userPage.hoverProfile();
     await userPage.clickLogout();          // đã logout
 
-    await userPage.openPlaywrightPage();
-    await userPage.login(userAdmin, pswAdmin);   // phải tự login lại, fixture không tự làm
+    const loginPage = new LoginPage(page);       // UserPage không còn method login -> dùng LoginPage
+    await loginPage.openPlaywrightPage();
+    await loginPage.login(userAdmin, pswAdmin);  // phải tự login lại, fixture không tự làm
+
+    await userPage.clickUserTab();               // cùng page -> userPage dùng tiếp được
     // ... tiếp tục xóa user
 });
 ```

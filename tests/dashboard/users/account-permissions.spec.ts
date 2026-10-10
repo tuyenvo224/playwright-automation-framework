@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test';
-import { UserPage } from '../../../pom/dashboard/users/add-user.page';
-import { test } from '../../../fixtures/dashboard-fixture';
-import { defaultTestPassword, randomEmail, randomUserName } from '../../../utils/random-data.util';
+import { UserPage } from '@pages/dashboard/users/add-user.page';
+import { test } from '@fixtures/dashboard-fixture';
+import { defaultTestPassword, randomEmail, randomUserName } from '@utils/random-data.util';
+import { LoginPage } from '@pages/login/login.page';
 
 test.describe("ACCOUNT-Account", () => {
     let userPage: UserPage;
@@ -26,10 +27,9 @@ test.describe("ACCOUNT-Account", () => {
     });
 
     test.afterEach("Login by admin & delete normal user", async ({ page }) => {
-        await userPage.openPlaywrightPage();
-        await userPage.fillUserNameLogin(userAdmin);
-        await userPage.fillPasswordLogin(pswAdmin);
-        await userPage.clickLoginButton();
+        const loginPage = new LoginPage (page);
+        await loginPage.openPlaywrightPage();
+        await loginPage.login(userAdmin,pswAdmin);
 
         await userPage.clickUserTab();
         await userPage.fillSearchUser(userName);
@@ -72,9 +72,8 @@ test.describe("ACCOUNT-Account", () => {
             await userPage.hoverProfile();
             await userPage.clickLogout();
 
-            await userPage.fillUserNameLogin(userName);
-            await userPage.fillPasswordLogin(psw);
-            await userPage.clickLoginButton(); // Đăng nhập bằng user mới được tạo với quyền editor
+            const loginPage = new LoginPage(page);
+            await loginPage.login(userName, psw); // Đăng nhập bằng user mới được tạo với quyền editor
 
             await expect(userPage.dashboardTabLoc).toBeVisible(); // Verify user với quyền editor có quyền trên các tab
             await expect(userPage.postsTabLoc).toBeVisible();
@@ -98,6 +97,7 @@ test.describe("ACCOUNT-Account", () => {
             await userPage.clickAddUserButton();
             await userPage.fillUserName(userName);
             await userPage.fillEmail(email);
+            await expect(userPage.emailTextboxLoc).toHaveValue(email);
             await userPage.fillFirstName("E101");
             await userPage.fillLastName("Tuyen");
             await userPage.selectRole('Subscriber'); // chọn quyền Subscriber
@@ -111,9 +111,8 @@ test.describe("ACCOUNT-Account", () => {
             await userPage.hoverProfile();
             await userPage.clickLogout(); // Click Log Out
 
-            await userPage.fillUserNameLogin(userName);
-            await userPage.fillPasswordLogin(psw);
-            await userPage.clickLoginButton(); // Đăng nhập bằng user mới được tạo với quyền Subscriber
+            const loginPage = new LoginPage(page);
+            await loginPage.login(userName, psw); // Đăng nhập bằng user mới được tạo với quyền Subscriber
 
             await expect(userPage.dashboardTabLoc).toBeVisible(); // Verify user với quyền Subscriber có quyền trên các tab
             await expect(userPage.profileTabLoc).toBeVisible();

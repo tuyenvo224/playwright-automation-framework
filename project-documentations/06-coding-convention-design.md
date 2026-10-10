@@ -8,38 +8,50 @@ Tài liệu này tổng hợp toàn bộ quy ước áp dụng xuyên suốt pro
 |---|---|---|
 | File Page Object | `<ten-trang>.page.ts` | `add-user.page.ts`, `login.page.ts` |
 | File test | `<ten-trang>.spec.ts` | `add-user.spec.ts`, `login.spec.ts` |
-| Class Page Object | PascalCase, hậu tố `Page` | `LoginPage`, `UserPage`, `DashboardBasePage` |
+| File base page (lớp cha dùng chung) | `<pham-vi>.base.page.ts` hoặc `base.page.ts` | `base.page.ts`, `dashboard.base.page.ts` |
+| Class Page Object | PascalCase, hậu tố `Page` | `BasePage`, `LoginPage`, `UserPage`, `DashboardBasePage` |
 | Locator cố định (property) | camelCase, hậu tố `Loc` | `usersTabLoc`, `msgCreateUserLoc` |
 | Locator động (method có tham số) | camelCase, **không** hậu tố `Loc` | `hoverUserName(userName)`, `getErrorMessage(userName)` |
 | Action method | động từ + đối tượng | `fillUserName`, `clickLoginButton`, `submitAddUser`, `selectRole` |
-| Hàm sinh dữ liệu trong `utils/` | `random<Loai>` | `randomUserName`, `randomEmail`, `randomNumericString` |
+| Hàm sinh dữ liệu trong `src/utils/` | `random<Loai>` | `randomUserName`, `randomEmail`, `randomNumericString` |
 | Biến theo dõi trạng thái đã tạo (để cleanup) | `created<TenEntity>` | `createdUserName` |
 
-## 2. Quy ước cho `pom/`
+## 2. Quy ước cho `src/pages/`
 
-- Locator khai kiểu `Locator` (import từ `@playwright/test`), **gán trong thân constructor**, sau khi `this.page = page;` — không khai giá trị ngay tại dòng property (xem lý do chi tiết ở [03-pom-design.md §2](03-pom-design.md#2-locator-kiểu-dữ-liệu-và-thời-điểm-khởi-tạo)).
+- Mọi Page Object kế thừa (trực tiếp hoặc gián tiếp) từ `BasePage` — nơi duy nhất giữ `page`, đọc `BASE_URL` và cung cấp `goto(path)`.
+- Locator khai kiểu `Locator` (import từ `@playwright/test`), **gán trong thân constructor**, sau `super(page)` — không khai giá trị ngay tại dòng property (xem lý do chi tiết ở [03-pom-design.md §2](03-pom-design.md#2-locator-kiểu-dữ-liệu-và-thời-điểm-khởi-tạo)).
 - Ưu tiên locator ngữ nghĩa: `getByRole` > `getByLabel` > `getByText` > CSS/id (chỉ khi không còn lựa chọn nào khác).
 - Trước khi dùng `exact: true` với `name`, luôn kiểm tra: (1) `role` tường minh trên DOM có ghi đè role mặc định của thẻ HTML không, (2) text hiển thị có bị CSS cắt (ellipsis) không — copy nhầm text bị cắt là lỗi hay gặp nhất.
 - Thêm `readonly` cho mọi locator không cần gán lại sau constructor — giúp TypeScript tự bắt lỗi gán nhầm biến (copy-paste).
-- Page Object kế thừa từ Page Object cha liên quan (VD: mọi trang trong `dashboard/` kế thừa `DashboardBasePage`) để dùng lại locator/action menu chung — không copy-paste.
-- Class con luôn tự khai `page: Page` và gọi `super(page)` đầu constructor.
-- POM cung cấp locator cho **cả action lẫn assertion** — test không bao giờ tự viết `page.getByRole(...)`/`page.getByText(...)` để assertion, phải lấy từ property/method có sẵn trong POM.
+- Page Object kế thừa từ Page Object cha liên quan (VD: mọi trang trong `dashboard/` kế thừa `DashboardBasePage`; `LoginPage` và trang `storefront/` kế thừa thẳng `BasePage`) để dùng lại locator/action chung — không copy-paste.
+- Class con gọi `super(page)` đầu constructor và **không** tự khai lại `page: Page` / gán lại `this.page = page` — `BasePage` đã làm việc này.- POM cung cấp locator cho **cả action lẫn assertion** — test không bao giờ tự viết `page.getByRole(...)`/`page.getByText(...)` để assertion, phải lấy từ property/method có sẵn trong POM.
 
-## 3. Quy ước cho `utils/`
+## 3. Quy ước cho `src/utils/`
 
 - Chỉ chứa hàm thuần, không phụ thuộc `Page`/`Browser`.
 - **Luôn có `export`** cho mọi hàm/hằng số dùng ở file khác — thiếu `export` trong file không có `import`/`export` nào khác sẽ khiến TypeScript coi cả file là "global script", vô tình để lộ ra ngoài scope toàn cục (xem chi tiết [04-utils-design.md §6](04-utils-design.md#6-bẫy-quan-trọng-bắt-buộc-phải-có-export)).
 - Chỉ thêm tham số cho hàm khi có **từ 2 nhu cầu giá trị khác nhau trở lên** ("rule of three") — không đoán trước. Khi cần thêm, dùng **default parameter** (`param: T = defaultValue`), không dùng tham số bắt buộc thiếu kiểu, và cân nhắc kỹ giữa `param?: T` (tùy chọn, phải tự xử lý `undefined`) với `param: T = default` (đã có sẵn giá trị mặc định).
-- Bọc thư viện bên thứ 3 (VD: `faker`) bên trong hàm của `utils/`, không để test file import thư viện đó trực tiếp.
+- Bọc thư viện bên thứ 3 (VD: `faker`) bên trong hàm của `src/utils/`, không để test file import thư viện đó trực tiếp.
 
-## 4. Quy ước cho `fixtures/`
+## 4. Quy ước cho `src/fixtures/`
 
 - Đặt tên file `<pham-vi>-fixture.ts` (VD: `dashboard-fixture.ts`).
 - Mỗi fixture chỉ chuẩn bị **một loại trạng thái** cụ thể (VD: "đã login") — không nhồi nhiều trách nhiệm không liên quan vào cùng 1 fixture.
 - File test dùng fixture phải import `test` từ file fixture, không phải từ `@playwright/test`.
-- Nếu trong test có bước logout rồi cần login lại (cleanup, hoặc verify quyền theo role khác), phải gọi lại các bước login **thủ công** — fixture chỉ chạy setup một lần lúc đầu test, không tự chạy lại giữa chừng.
+- Nếu trong test có bước logout rồi cần login lại (cleanup, hoặc verify quyền theo role khác), phải gọi lại các bước login **thủ công** bằng `new LoginPage(page)` — fixture chỉ chạy setup một lần lúc đầu test, không tự chạy lại giữa chừng.
 
 ## 5. Quy ước viết test (`tests/`)
+
+### 5.0 Import
+
+- Code trong `src/` luôn được import qua **path alias**, không dùng đường dẫn tương đối `../../../`:
+  ```ts
+  import { UserPage } from '@pages/dashboard/users/add-user.page';
+  import { test } from '@fixtures/dashboard-fixture';
+  import { randomUserName } from '@utils/random-data.util';
+  ```
+- Bên trong `src/` cũng dùng alias khi import chéo thư mục (VD: `import { BasePage } from "@pages/base.page";`).
+- Vị trí file test mirror đúng vị trí page object trong `src/pages/` (VD: `src/pages/login/login.page.ts` ↔ `tests/login/login.spec.ts`).
 
 ### 5.1 Cấu trúc file
 - Mỗi file test bắt đầu bằng `test.describe("<Tên module>", () => {...})`.
@@ -106,5 +118,16 @@ await userPage.fillEmail(`dup2-${Date.now()}@gmail.com`);   // khác — để c
 
 ## 7. Cấu hình TypeScript (`tsconfig.json`)
 
-- Project phải luôn có `tsconfig.json` ở gốc — thiếu file này khiến editor không nhận diện đúng project là Node.js, dễ báo lỗi sai (VD: không nhận ra `process` dù `@types/node` đã cài đủ).
-- Không dùng `"moduleResolution": "node"`/`"node10"` — bị đánh dấu deprecated ở các bản TypeScript mới. Vì code hiện tại dùng import tương đối không ghi đuôi file (`from './login/login.page'`), **không đổi sang** `"node16"`/`"nodenext"` (yêu cầu ghi đuôi file, sẽ làm gãy toàn bộ import hiện có). Đơn giản nhất: không khai `moduleResolution`, để TypeScript tự suy luận từ `"module": "commonjs"`.
+- Project phải luôn có `tsconfig.json` ở gốc — thiếu file này khiến editor không nhận diện đúng project là Node.js, dễ báo lỗi sai (VD: không nhận ra `process` dù `@types/node` đã cài đủ). `"types": ["node"]` khai tường minh để chắc chắn type của Node (`process`, `__dirname`...) luôn được nạp.
+- Không dùng `"moduleResolution": "node"`/`"node10"` — bị đánh dấu deprecated ở các bản TypeScript mới. Vì code hiện tại import không ghi đuôi file (`from '@pages/login/login.page'`), **không đổi sang** `"node16"`/`"nodenext"` (yêu cầu ghi đuôi file, sẽ làm gãy toàn bộ import hiện có). Đơn giản nhất: không khai `moduleResolution`, để TypeScript tự suy luận từ `"module": "commonjs"`.
+- Path alias khai trong `"paths"` với đường dẫn bắt đầu bằng `./` (tương đối so với vị trí `tsconfig.json`), **không** khai `"baseUrl"` — project dùng TypeScript 7, bản này đã bỏ `baseUrl`:
+  ```jsonc
+  "paths": {
+    "@data/*": ["./src/data/*"],
+    "@pages/*": ["./src/pages/*"],
+    "@fixtures/*": ["./src/fixtures/*"],
+    "@utils/*": ["./src/utils/*"]
+  }
+  ```
+- Thêm alias mới khi có thư mục mới trong `src/` cần import từ nơi khác — luôn theo dạng `@<ten-thu-muc>/*` → `./src/<ten-thu-muc>/*`.
+- Chạy `npm run typecheck` (`tsc --noEmit`) trước khi commit để bắt lỗi type/import sai đường dẫn — Playwright khi chạy test **không** kiểm tra type, nên lỗi type có thể lọt qua nếu chỉ chạy test.

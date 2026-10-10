@@ -1,8 +1,8 @@
-# 04 — Thiết kế `utils/`
+# 04 — Thiết kế `src/utils/`
 
-## 1. Vai trò của `utils/` — khác gì với `pom/` và `fixtures/`
+## 1. Vai trò của `src/utils/` — khác gì với `src/pages/` và `src/fixtures/`
 
-`utils/` chỉ chứa **hàm thuần (pure function)**, không phụ thuộc `Page`/`Browser`/bất kỳ thứ gì của Playwright. Đây là điểm phân biệt rõ ràng với `pom/` (luôn cần `Page`) và `fixtures/` (luôn gắn với vòng đời của `test`). Hiện tại project có một file duy nhất: [utils/random-data.util.ts](../utils/random-data.util.ts), chuyên sinh dữ liệu test ngẫu nhiên.
+`src/utils/` chỉ chứa **hàm thuần (pure function)**, không phụ thuộc `Page`/`Browser`/bất kỳ thứ gì của Playwright. Đây là điểm phân biệt rõ ràng với `src/pages/` (luôn cần `Page`) và `src/fixtures/` (luôn gắn với vòng đời của `test`). Hiện tại project có một file duy nhất: [src/utils/random-data.util.ts](../src/utils/random-data.util.ts), chuyên sinh dữ liệu test ngẫu nhiên. Nơi sử dụng import qua alias `@utils/...` (xem [02-folder-design.md §7](02-folder-design.md#7-path-alias--import-theo-tên-không-theo-số-tầng-thư-mục)).
 
 ## 2. Nội dung hiện có
 
@@ -36,7 +36,7 @@ export function randomAlphanumericString(length: number): string {
 
 `randomUserName`/`randomEmail` dùng **default parameter** (`prefix: string = 'E101-tuyen'`), không phải vì "thêm cho chắc" mà vì đã có bằng chứng cụ thể: nếu dự án về sau cần prefix khác cho module khác, chỉ cần gọi `randomUserName('Khac')` mà không phá vỡ mọi chỗ đang gọi `randomUserName()` không tham số.
 
-Nguyên tắc chung khi viết hàm mới trong `utils/`: **bắt đầu bằng hàm không tham số** nếu hiện tại chỉ có đúng 1 nhu cầu. Chỉ thêm tham số khi thấy **từ 2 chỗ gọi trở lên** cần giá trị khác nhau thật sự ("rule of three") — không đoán trước nhu cầu chưa xảy ra, vì thêm tham số sau này gần như không tốn chi phí (dùng dạng default/optional không phá vỡ chỗ gọi cũ).
+Nguyên tắc chung khi viết hàm mới trong `src/utils/`: **bắt đầu bằng hàm không tham số** nếu hiện tại chỉ có đúng 1 nhu cầu. Chỉ thêm tham số khi thấy **từ 2 chỗ gọi trở lên** cần giá trị khác nhau thật sự ("rule of three") — không đoán trước nhu cầu chưa xảy ra, vì thêm tham số sau này gần như không tốn chi phí (dùng dạng default/optional không phá vỡ chỗ gọi cũ).
 
 ### So sánh 3 cách viết tham số
 
@@ -52,7 +52,7 @@ Khác với `randomUserName`/`randomEmail` (sinh giá trị mới mỗi lần g�
 
 ## 5. Bọc thư viện ngoài (`faker`) thay vì để test file import trực tiếp
 
-`randomNumericString`/`randomAlphaString`/`randomAlphanumericString` gọi `faker.string.*` bên trong, nhưng **test file không bao giờ `import { faker } from '@faker-js/faker'` trực tiếp** — luôn import qua các hàm wrapper trong `utils/`. Lý do: nếu sau này đổi từ `faker` sang thư viện khác (hoặc viết tay không dùng thư viện), chỉ cần sửa đúng 1 file `utils/random-data.util.ts`, không phải sửa lại từng file test đang gọi `faker` trực tiếp.
+`randomNumericString`/`randomAlphaString`/`randomAlphanumericString` gọi `faker.string.*` bên trong, nhưng **test file không bao giờ `import { faker } from '@faker-js/faker'` trực tiếp** — luôn import qua các hàm wrapper trong `src/utils/`. Lý do: nếu sau này đổi từ `faker` sang thư viện khác (hoặc viết tay không dùng thư viện), chỉ cần sửa đúng 1 file `src/utils/random-data.util.ts`, không phải sửa lại từng file test đang gọi `faker` trực tiếp.
 
 ## 6. Bẫy quan trọng: bắt buộc phải có `export`
 
@@ -60,11 +60,11 @@ Nếu một file `.ts` **không có bất kỳ dòng `import`/`export`** nào, T
 
 **Quy tắc bắt buộc:** mọi hàm/hằng số dùng ở file khác đều phải có `export`, và nơi sử dụng phải `import` tường minh:
 ```ts
-// utils/random-data.util.ts
+// src/utils/random-data.util.ts
 export function randomUserName(...): string { ... }
 
 // tests/dashboard/users/add-user.spec.ts
-import { randomUserName, randomEmail, defaultTestPassword, randomNumericString, randomAlphaString } from '../../../utils/random-data.util';
+import { defaultTestPassword, randomAlphaString, randomEmail, randomNumericString, randomUserName } from '@utils/random-data.util';
 ```
 
 ## 7. Lợi ích so với việc hardcode chuỗi cố định trong test

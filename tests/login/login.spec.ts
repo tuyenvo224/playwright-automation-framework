@@ -1,5 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
-import { LoginPage } from '../../../pom/dashboard/login/login.page';
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '@pages/login/login.page';
+import { DashboardBasePage } from '@pages/dashboard/dashboard.base.page';
 
 test.describe("AUTH-Authentication", () => { 
     let loginPage: LoginPage;
@@ -10,8 +11,8 @@ test.describe("AUTH-Authentication", () => {
     });
 
     test("@AUTH_001:Login fail", async ({ page }) => { 
-        const userName = "betterbytes.academy.admin123";
-        const psw = "StrongPass@BetterBytesAcademy";
+        const userName = "test123456";
+        const psw = "test111";
 
         await test.step("Input incorrect user name - password", async () => { 
 
@@ -31,8 +32,8 @@ test.describe("AUTH-Authentication", () => {
     });
 
     test("@AUTH_002:Login success", async ({ page }) => { 
-        const userName = "betterbytes.academy.admin";
-        const psw = "StrongPass@BetterBytesAcademy";
+        const userName = process.env.ADMIN_USERNAME!;
+        const psw = process.env.ADMIN_PASSWORD!;
 
         await test.step("Input correct user name - password", async () => { 
             await loginPage.fillUserNameLogin(userName);
@@ -45,10 +46,15 @@ test.describe("AUTH-Authentication", () => {
         await test.step("Click login button", async () => {  
             await loginPage.clickLoginButton()
 
-            await expect(page).toHaveURL("https://pw-practice-dev.playwrightvn.com/wp-admin/");
-            await expect(loginPage.dashboardHeadingLoc).toHaveText("Dashboard");
-            await expect(loginPage.atAGlanceHeadingLoc).toHaveText("At a Glance");
-            await expect(loginPage.activityHeadingLoc).toHaveText("Activity");
+            const dashboardBasePage = new DashboardBasePage(page);
+
+            //await expect(page).toHaveURL("https://pw-practice-dev.playwrightvn.com/wp-admin/");
+            //await expect(page).toHaveURL(/wp-admin/);
+            await expect(page).toHaveURL(/\/wp-admin\/$/);
+            //await expect(page).toHaveURL(new RegExp("/wp-admin/$"));
+            await expect(dashboardBasePage.dashboardHeadingLoc).toHaveText("Dashboard");
+            await expect(dashboardBasePage.atAGlanceHeadingLoc).toHaveText("At a Glance");
+            await expect(dashboardBasePage.activityHeadingLoc).toHaveText("Activity");
 
         })
     });

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
-import { ProfilePage } from '../../../pom/dashboard/users/profile.page';
-import { test } from '../../../fixtures/dashboard-fixture';
+import { ProfilePage } from '@pages/dashboard/users/profile.page';
+import { test } from '@fixtures/dashboard-fixture';
 
 test.describe("Users - Profile", () => {
     let profilePage: ProfilePage;

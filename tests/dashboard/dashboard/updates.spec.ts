@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
-import { UpdatesPage } from '../../../pom/dashboard/dashboard/updates.page';
-import { test } from '../../../fixtures/dashboard-fixture';
+import { UpdatesPage } from '@pages/dashboard/dashboard/updates.page';
+import { test } from '@fixtures/dashboard-fixture';
 
 
 test.describe("Dashboard - Updates", () => {

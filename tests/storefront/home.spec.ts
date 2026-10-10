@@ -1,15 +1,15 @@
 import { expect } from '@playwright/test';
-import { StroreFrontHomePage } from '../../pom/storefront/home.page';
-import { test } from '../../fixtures/dashboard-fixture';
+import { StoreFrontHomePage } from '@pages/storefront/home.page';
+import { test } from '@fixtures/dashboard-fixture';
 
 
-test.describe("Dashboard - Home", () => {
-    let homePage: StroreFrontHomePage;
+test.describe("StoreFront - Home", () => {
+    let homePage: StoreFrontHomePage;
 
-    test("Click Dashboard tab", async ({ dashboardBasePage }) => {
-        await test.step("Click Dashboard tab", async () => {
-            homePage = new StroreFrontHomePage(dashboardBasePage.page);
-            await homePage.clickstoreFrontPage();
+    test("Click StoreFront tab", async ({ dashboardBasePage }) => {
+        await test.step("Click StoreFront tab", async () => {
+            homePage = new StoreFrontHomePage(dashboardBasePage.page);
+            await homePage.clickStoreFrontPage();
 
             await expect(dashboardBasePage.page).toHaveURL('https://pw-practice-dev.playwrightvn.com/');
             await expect(homePage.titleStoreFrontLoc).toBeVisible();

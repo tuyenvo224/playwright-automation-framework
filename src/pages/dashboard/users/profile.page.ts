@@ -1,13 +1,11 @@
 import { Locator, Page } from "@playwright/test";
-import { DashboardBasePage } from "../dashboard.base.page";
+import { DashboardBasePage } from "@pages/dashboard/dashboard.base.page";
 
 export class ProfilePage extends DashboardBasePage {
-    page: Page;
-    profileHeadingLoc: Locator;
+    readonly profileHeadingLoc: Locator;
 
     constructor(page: Page) {
         super(page);
-        this.page = page;
         this.profileHeadingLoc = this.page.getByRole('heading', { name: 'Profile', exact: true });
     }
 

@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test';
-import { UserPage } from '../../../pom/dashboard/users/add-user.page';
-import { test } from '../../../fixtures/dashboard-fixture';
-import { defaultTestPassword, randomAlphaString, randomEmail, randomNumericString, randomUserName } from '../../../utils/random-data.util';
+import { UserPage } from '@pages/dashboard/users/add-user.page';
+import { test } from '@fixtures/dashboard-fixture';
+import { defaultTestPassword, randomAlphaString, randomEmail, randomNumericString, randomUserName } from '@utils/random-data.util';
+import { LoginPage } from '@pages/login/login.page';
 
 test.describe("Users - add user", () => {
     let userPage: UserPage;
@@ -35,11 +36,9 @@ test.describe("Users - add user", () => {
         await userPage.hoverProfile(); // 
         await userPage.clickLogout(); // Click Log Out
 
-        await userPage.openPlaywrightPage();
-        // await userPage.fillUserNameLogin(userAdmin);
-        // await userPage.fillPasswordLogin(pswAdmin);
-        // await userPage.clickLoginButton(); 
-        await userPage.login(userAdmin, pswAdmin);
+        const loginPage = new LoginPage (page);
+        await loginPage.openPlaywrightPage();
+        await loginPage.login(userAdmin,pswAdmin);
 
         await userPage.clickUserTab();
         await userPage.fillSearchUser(createdUserName);
@@ -94,7 +93,8 @@ test.describe("Users - add user", () => {
             await userPage.clickAddUserButton();
 
             await userPage.submitAddUser();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
         });
     });
 
@@ -106,7 +106,8 @@ test.describe("Users - add user", () => {
             await userPage.fillUserName(userName);
 
             await userPage.submitAddUser();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
         });
     });
 
@@ -118,7 +119,8 @@ test.describe("Users - add user", () => {
             await userPage.fillEmail(email);
 
             await userPage.submitAddUser();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
         });
     });
 
@@ -132,7 +134,8 @@ test.describe("Users - add user", () => {
 
             await userPage.submitAddUser();
             await expect(userPage.errorUserNameMsgLoc).toBeVisible();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
         });
     });
 
@@ -146,7 +149,8 @@ test.describe("Users - add user", () => {
 
             await userPage.submitAddUser();
             await expect(userPage.errorEmailMsgLoc).toBeVisible();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php') // Không chuyển trang
         });
     });
 
@@ -244,7 +248,8 @@ test.describe("Users - add user", () => {
 
             await userPage.submitAddUser();
             await expect(userPage.duplicateUserNameMsgLoc).toBeVisible();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
         });
     });
 
@@ -274,7 +279,8 @@ test.describe("Users - add user", () => {
 
             await userPage.submitAddUser();
             await expect(userPage.duplicateUserNameMsgLoc).toBeVisible();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
         });
     });
 
@@ -302,7 +308,8 @@ test.describe("Users - add user", () => {
 
             await userPage.submitAddUser();
             await expect(userPage.duplicatedEmailMsgLoc).toBeVisible();
-            await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
+            await expect(page).toHaveURL(/user-new\.php$/);
+            //await expect(page).toHaveURL('https://pw-practice-dev.playwrightvn.com/wp-admin/user-new.php'); // Không tạo thêm được
         });
     });
 

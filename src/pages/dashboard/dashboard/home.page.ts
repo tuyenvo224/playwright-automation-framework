@@ -1,14 +1,10 @@
-import { Locator, Page } from "@playwright/test";
-import { DashboardBasePage } from "../dashboard.base.page";
+import { Page } from "@playwright/test";
+import { DashboardBasePage } from "@pages/dashboard/dashboard.base.page";
 
 export class HomePage extends DashboardBasePage {
-    page: Page;
-    
-    
 
     constructor(page: Page) {
         super(page);
-        this.page = page;
 
     }
 
