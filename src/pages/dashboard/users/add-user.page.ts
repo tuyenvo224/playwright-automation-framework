@@ -1,4 +1,4 @@
-import { Locator, Page } from "@playwright/test";
+import { expect, Locator, Page } from "@playwright/test";
 import { DashboardBasePage } from "@pages/dashboard/dashboard.base.page";
 
 export class UserPage extends DashboardBasePage {
@@ -58,10 +58,30 @@ export class UserPage extends DashboardBasePage {
         this.duplicatedEmailMsgLoc = this.page.getByText(` This email is already registered. Please choose another one.`);
     }
 
+    // async clickAddUserButton() {
+    //     await this.addUserButtonLoc.click();
+    //     await this.waitForPageLoad();   // chờ sự kiện 'load': toàn bộ script đã tải và chạy xong
+    // }
+
     async clickAddUserButton() {
         await this.addUserButtonLoc.click();
-        await this.waitForPageLoad();   // chờ sự kiện 'load': toàn bộ script đã tải và chạy xong
+        await this.waitForAddUserFormReady();
     }
+
+    // Override clickAddUserTab() của DashboardBasePage: vào form Add User qua submenu cũng phải chờ form sẵn sàng.
+    async clickAddUserTab() {
+        await super.clickAddUserTab();
+        await this.waitForAddUserFormReady();
+    }
+
+    // Form Add User chỉ sẵn sàng khi zxcvbn.min.js (~400KB, WordPress chỉ bắt đầu tải SAU sự kiện 'load') tải xong:
+    // lúc đó generatePassword() mới điền mật khẩu tự sinh vào ô Password rồi focus vào ô đó.
+    // Thao tác trước thời điểm này: chữ bị điền nhầm ô, hoặc bấm submit mà form không được gửi đi.
+    async waitForAddUserFormReady() {
+        await this.waitForPageLoad();
+        await expect(this.passwordTextBoxLoc).not.toHaveValue('');
+    }
+
 
     // async fillUserName(userName: string) {
     //     await this.userNameTextboxLoc.fill(userName);
