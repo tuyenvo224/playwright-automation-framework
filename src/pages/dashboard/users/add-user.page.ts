@@ -60,27 +60,49 @@ export class UserPage extends DashboardBasePage {
 
     async clickAddUserButton() {
         await this.addUserButtonLoc.click();
+        await this.waitForPageLoad();   // chờ sự kiện 'load': toàn bộ script đã tải và chạy xong
     }
 
+    // async fillUserName(userName: string) {
+    //     await this.userNameTextboxLoc.fill(userName);
+    // }
+
+    // async fillEmail(email: string) {
+    //     await this.emailTextboxLoc.fill(email);
+    // }
+
+    // async fillFirstName(firstName: string) {
+    //     await this.firstNameTextboxLoc.fill(firstName);
+    // }
+
+    // async fillLastName(lastName: string) {
+    //     await this.lastNameTextboxLoc.fill(lastName);
+    // }
+
+    // async fillPassword(password: string) {
+    //     await this.passwordTextBoxLoc.fill(password);
+    // }
+
     async fillUserName(userName: string) {
-        await this.userNameTextboxLoc.fill(userName);
+        await this.fillAndVerify(this.userNameTextboxLoc, userName);
     }
 
     async fillEmail(email: string) {
-        await this.emailTextboxLoc.fill(email);
+        await this.fillAndVerify(this.emailTextboxLoc, email);
     }
 
     async fillFirstName(firstName: string) {
-        await this.firstNameTextboxLoc.fill(firstName);
+        await this.fillAndVerify(this.firstNameTextboxLoc, firstName);
     }
 
     async fillLastName(lastName: string) {
-        await this.lastNameTextboxLoc.fill(lastName);
+        await this.fillAndVerify(this.lastNameTextboxLoc, lastName);
     }
 
     async fillPassword(password: string) {
-        await this.passwordTextBoxLoc.fill(password);
+        await this.fillAndVerify(this.passwordTextBoxLoc, password);
     }
+
 
     async selectRole(role: string) {
         await this.roleComboboxLoc.selectOption(role);

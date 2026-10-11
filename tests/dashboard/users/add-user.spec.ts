@@ -33,8 +33,9 @@ test.describe("Users - add user", () => {
         //Dòng if (!createdUserName) { return; } ở đầu — đây là "cổng gác" duy nhất bạn cần. return sớm trong hook của Playwright là hợp lệ, các bước phía dưới sẽ không chạy.
         // Toàn bộ chỗ dùng userName bên trong phần cleanup được đổi thành createdUserName — về mặt logic hai biến đang giữ cùng giá trị ở test tạo-thành-công, nhưng dùng đúng createdUserName giúp code tự nói lên ý nghĩa: "đây là thao tác xóa cái đã xác nhận được tạo", tránh nhầm lẫn nếu sau này có test tạo user theo cách khác (không nhất thiết bằng biến userName gốc).
 
-        await userPage.hoverProfile(); // 
-        await userPage.clickLogout(); // Click Log Out
+        //await userPage.hoverProfile(); // 
+        //await userPage.clickLogout(); // Click Log Out
+        await userPage.logout();
 
         const loginPage = new LoginPage (page);
         await loginPage.openPlaywrightPage();

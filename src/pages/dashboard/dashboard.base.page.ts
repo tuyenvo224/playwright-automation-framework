@@ -1,4 +1,4 @@
-import { Locator, Page } from "@playwright/test";
+import { expect, Locator, Page } from "@playwright/test";
 import { BasePage } from "@pages/base.page";
 
 export class DashboardBasePage extends BasePage {
@@ -57,6 +57,7 @@ export class DashboardBasePage extends BasePage {
 
     async clickUserTab() {
         await this.usersTabLoc.click();
+        await this.waitForPageLoad();   // chờ sự kiện 'load': toàn bộ script đã tải và chạy xong
     }
 
     async clickAllUsersTab() {
@@ -90,5 +91,19 @@ export class DashboardBasePage extends BasePage {
     async clickLogout() {
         await this.logoutLoc.click();
     }
+
+    async logout() {
+        // Menu Howdy do JS (hoverIntent) mở khi chuột "đi vào" phần tử.
+        // Mỗi lần thử: đưa chuột ra ngoài trước để lần hover sau tạo ra sự kiện "đi vào" mới.
+        await expect(async () => {
+            await this.page.mouse.move(0, 0);
+            await this.hoverProfileLoc.hover();
+            await this.logoutLoc.click({ timeout: 2000 });
+        }).toPass({ timeout: 15000 });
+
+        //click({ timeout: 2000 }): nếu sau 2 giây vẫn không click được thì báo lỗi ngay, thay vì treo tới 30 giây.
+        //toPass({ timeout: 15000 }): khi gặp lỗi đó, chạy lại từ bước hover, tối đa 15 giây.
+    }
+
 };
 

@@ -83,9 +83,24 @@ Project có sẵn workflow GitHub Actions tại [.github/workflows/playwright.ym
 
 1. Cài dependencies (`npm ci`).
 2. Kiểm tra type (`npm run typecheck`) — Playwright khi chạy test **không** kiểm tra type, nên bước này chặn lỗi type/import sai đường dẫn. Đặt trước bước cài browser để nếu lỗi thì job dừng ngay, không mất thời gian tải browser.
-3. Cài browser (`npx playwright install --with-deps`).
-4. Chạy test (`npx playwright test`).
+3. Cài browser — mặc định chỉ cài chromium (`npx playwright install --with-deps chromium`).
+4. Chạy test — mặc định chỉ chạy chromium (`npx playwright test --project=chromium`).
 5. Upload report HTML thành artifact `playwright-report` (giữ 30 ngày) để tải về xem trong tab **Actions** — bước này vẫn chạy kể cả khi test fail.
+
+### Chọn browser chạy trên CI
+
+| Cách kích hoạt | Browser |
+|---|---|
+| Push / Pull Request vào `main`/`master` | Chỉ **chromium** (nhanh, ~26 test) |
+| Chạy tay từ tab **Actions** → chọn `chromium` | Chỉ **chromium** |
+| Chạy tay từ tab **Actions** → chọn `all` | Cả **chromium, firefox, webkit** (~78 test, lâu hơn khoảng 3 lần) |
+
+**Cách chạy tay** (không cần commit): repo trên GitHub → tab **Actions** → chọn workflow **Playwright Tests** ở cột trái → nút **Run workflow** → chọn branch, ở ô **Browser cần chạy** chọn `chromium` hoặc `all` → **Run workflow**.
+
+**Lưu ý:**
+- Nút **Run workflow** chỉ xuất hiện khi file workflow có `workflow_dispatch` đã nằm trên nhánh mặc định (`main`).
+- **Re-run jobs** ở một lần chạy cũ chỉ chạy lại đúng cấu hình cũ, không chọn lại được browser — muốn đổi browser phải dùng **Run workflow**.
+- Push/PR chỉ chạy chromium nên **không phát hiện được lỗi riêng của firefox/webkit** (VD: lỗi WordPress giành focus khi đang `fill` chỉ lộ ra trên firefox). Trước khi merge thay đổi lớn, nên chạy tay với `all` hoặc chạy đủ 3 browser ở local (`npx playwright test`).
 
 ### Biến môi trường trên CI
 
@@ -93,7 +108,8 @@ Vì `.env` không được commit, CI lấy biến môi trường từ **GitHub 
 
 ```yaml
 - name: Run Playwright tests
-  run: npx playwright test
+  run: |
+    ...   # chạy chromium hoặc cả 3 browser tùy lựa chọn (xem mục trên)
   env:
     BASE_URL: ${{ secrets.BASE_URL }}
     ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}

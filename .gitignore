@@ -6,6 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/ci-report/
+/notes/
 
 # Environment variables
 .env

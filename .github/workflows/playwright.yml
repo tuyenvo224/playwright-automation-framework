@@ -4,10 +4,19 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:                 # cho phép chạy tay từ tab Actions, chọn được browser
+    inputs:
+      browsers:
+        description: 'Browser cần chạy'
+        type: choice
+        options: [chromium, all]
+        default: chromium
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      BROWSERS: ${{ inputs.browsers || 'chromium' }}   # push/PR không có input -> mặc định chromium
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -18,9 +27,19 @@ jobs:
     - name: Type check
       run: npm run typecheck
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: |
+        if [ "$BROWSERS" = "all" ]; then
+          npx playwright install --with-deps
+        else
+          npx playwright install --with-deps chromium
+        fi
     - name: Run Playwright tests
-      run: npx playwright test
+      run: |
+        if [ "$BROWSERS" = "all" ]; then
+          npx playwright test
+        else
+          npx playwright test --project=chromium
+        fi
       env:
         BASE_URL: ${{ secrets.BASE_URL }}
         ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}

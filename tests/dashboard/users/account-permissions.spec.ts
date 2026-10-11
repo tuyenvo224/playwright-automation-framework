@@ -5,6 +5,8 @@ import { defaultTestPassword, randomEmail, randomUserName } from '@utils/random-
 import { LoginPage } from '@pages/login/login.page';
 
 test.describe("ACCOUNT-Account", () => {
+    test.describe.configure({ timeout: 60000 }); // luồng phân quyền dài (tạo user → logout → login user mới → verify → logout → login admin → xóa user), cần nhiều thời gian hơn mặc định 30s
+    
     let userPage: UserPage;
     let userName: string;
     let psw: string;
@@ -69,8 +71,9 @@ test.describe("ACCOUNT-Account", () => {
         });
 
         await test.step("Logout & Login with new account", async () => {
-            await userPage.hoverProfile();
-            await userPage.clickLogout();
+            //await userPage.hoverProfile();
+            //await userPage.clickLogout();
+            await userPage.logout();
 
             const loginPage = new LoginPage(page);
             await loginPage.login(userName, psw); // Đăng nhập bằng user mới được tạo với quyền editor
@@ -87,8 +90,9 @@ test.describe("ACCOUNT-Account", () => {
             await expect(userPage.pluginsTabLoc).toBeHidden();
             await expect(userPage.usersTabLoc).toBeHidden();
 
-            await userPage.hoverProfile(); // 
-            await userPage.clickLogout(); // Click Log Out 
+            //await userPage.hoverProfile(); // 
+            //await userPage.clickLogout(); // Click Log Out 
+            await userPage.logout();
         });
     });
 
@@ -108,8 +112,9 @@ test.describe("ACCOUNT-Account", () => {
         });
 
         await test.step("Logout & Login with new account", async () => { // Thực hiện đăng xuất và đăng nhập lại với user name vừa tạo
-            await userPage.hoverProfile();
-            await userPage.clickLogout(); // Click Log Out
+            //await userPage.hoverProfile();
+            //await userPage.clickLogout(); // Click Log Out
+            await userPage.logout();
 
             const loginPage = new LoginPage(page);
             await loginPage.login(userName, psw); // Đăng nhập bằng user mới được tạo với quyền Subscriber
@@ -126,8 +131,9 @@ test.describe("ACCOUNT-Account", () => {
             await expect(userPage.pluginsTabLoc).toBeHidden();
             await expect(userPage.usersTabLoc).toBeHidden();
 
-            await userPage.hoverProfile();
-            await userPage.clickLogout(); // Click Log Out
+            //await userPage.hoverProfile();
+            //await userPage.clickLogout(); // Click Log Out
+            await userPage.logout();
         });
     });
 
