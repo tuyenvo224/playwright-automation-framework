@@ -41,15 +41,36 @@ Tài liệu này chỉ ghi lại các tính năng và lưu ý **dựa trên ph�
   - Username đã tồn tại → message: `This username is already registered. Please choose another one.` — **kiểm tra trùng không phân biệt hoa/thường** (VD tạo `abc` trước, thử tạo `ABC` sau vẫn báo trùng).
   - Email đã tồn tại → message: ` This email is already registered. Please choose another one.`
   - Username hợp lệ có thể là chuỗi toàn số hoặc toàn chữ — cả hai đều tạo thành công (message: `New user created. `).
-  - **Lưu ý khi test — trang tải nhiều JavaScript:** trang `user-new.php` tải hơn 60 file JS (React, block-editor, `user-profile.js`...). Click vào link chỉ chờ trang **bắt đầu** tải, nên nếu thao tác ngay, JS của trang chưa khởi tạo xong. Vì vậy `clickAddUserButton()` ([add-user.page.ts](../src/pages/dashboard/users/add-user.page.ts)) gọi `waitForPageLoad()` (chờ sự kiện `load`) ngay sau khi click — đây là đường vào form mà mọi test điền form đang dùng. (`clickUserTab()` trong [dashboard.base.page.ts](../src/pages/dashboard/dashboard.base.page.ts) cũng chờ `load` tương tự.)
-    - ⚠️ `clickAddUserTab()` (vào form qua submenu `Users → Add User`) **chưa** chờ `load` — hiện chỉ dùng trong test kiểm tra heading nên chưa gây lỗi. Nếu sau này có test điền form sau khi vào bằng đường này, cần bổ sung `waitForPageLoad()` cho method này.
-  - **Lưu ý khi test — trang tự giành focus về ô Password:** `user-profile.js` focus vào ô Password (ô chứa mật khẩu tự sinh) khi khởi tạo — việc này có thể xảy ra **sau** sự kiện `load`. Nếu rơi đúng lúc đang điền ô khác, chữ bị **nối vào cuối mật khẩu tự sinh** và ô đang điền bị **trống** → thiếu Username → form **không được gửi đi** (không có request POST, không có message nào hiện ra). Hiện tượng đã quan sát được trên Firefox chạy CI:
-    ```
-    textbox "Username (required)"                                    ← trống
-    textbox "Password": (8(qGAtN$)XH8ymOi)h6rs!VE101-tuyen-1791699032022   ← username bị nối vào mật khẩu
-    ```
-    - Cách xử lý: các hàm `fillUserName/fillEmail/fillFirstName/fillLastName/fillPassword` dùng `fillAndVerify()` (khai trong [base.page.ts](../src/pages/base.page.ts)) — điền xong kiểm tra ô **đó** có đúng giá trị không, sai thì điền lại.
-    - Ở đây kiểm tra từng ô là đủ (khác với trang login): ô đang điền bị trống nên chính `fillAndVerify()` của ô đó phát hiện ra. Ô Password bị nối thêm chữ thì vô hại — test không điền Password thì không quan tâm giá trị, test có điền thì `fillPassword()` được gọi sau và `fill()` **ghi đè** toàn bộ ô.
+  - **Lưu ý khi test — form chỉ sẵn sàng khi `zxcvbn` tải xong (quan trọng nhất):**
+    - Trang `user-new.php` tải hơn 60 file JS. Riêng thư viện đo độ mạnh mật khẩu **`zxcvbn.min.js` (~400KB)** được WordPress tải theo kiểu `zxcvbn-async`: chỉ **bắt đầu** tải **sau** sự kiện `load`. Trên máy CI của GitHub, file này mất 200–870ms để tải.
+    - Form chỉ được khởi tạo xong khi zxcvbn tải xong. Mã nguồn `wp-admin/js/user-profile.js` (WordPress 7.0.7):
+      ```js
+      function generatePassword() {
+          if ( typeof zxcvbn !== 'function' ) {
+              setTimeout( generatePassword, 50 );   // zxcvbn chưa tải -> chờ 50ms thử lại, form CHƯA khởi tạo
+              return;
+          }
+          $pass1.val( $pass1.data( 'pw' ) );        // zxcvbn tải xong -> điền mật khẩu tự sinh vào ô Password
+          ...
+          $( $pass1 ).trigger( 'focus' );           // ... rồi FOCUS vào ô Password
+      }
+      ```
+    - Thao tác **trước** thời điểm này gây ra 2 loại lỗi (đều đã gặp thực tế trên CI firefox/webkit, local hầu như không gặp vì máy local tải nhanh hơn):
+      | Thao tác rơi vào lúc | Hậu quả |
+      |---|---|
+      | Đang `fill` một ô **đúng lúc** `generatePassword()` chạy | Focus bị kéo sang ô Password → chữ bị **nối vào cuối mật khẩu tự sinh**, ô đang điền bị **trống** (`textbox "Username (required)"` trống, `textbox "Password": ...E101-tuyen-1791699032022`) |
+      | Bấm "Add User" **trước khi** `generatePassword()` chạy | **Form không được gửi đi**: trace không có request POST nào, không có message nào hiện ra — dù các ô đã điền đúng. Đo trên 14/14 lần fail: đều bấm submit sớm hơn lúc zxcvbn tải xong 80–760ms |
+    - **Chờ `load` (`waitForPageLoad()`) là KHÔNG đủ:** trace cho thấy `waitForPageLoad()` trả về đúng thời điểm zxcvbn **bắt đầu** tải.
+    - **Cách xử lý:** `waitForAddUserFormReady()` trong [add-user.page.ts](../src/pages/dashboard/users/add-user.page.ts) chờ **dấu hiệu nhìn thấy được** của việc khởi tạo xong — ô Password đã có mật khẩu tự sinh:
+      ```ts
+      async waitForAddUserFormReady() {
+          await this.waitForPageLoad();
+          await expect(this.passwordTextBoxLoc).not.toHaveValue('');
+      }
+      ```
+      Vì điền mật khẩu và focus nằm liền nhau trong cùng một lần chạy của `generatePassword()`, khi thấy ô Password có giá trị thì focus cũng đã chuyển xong → **một điều kiện chờ chặn được cả 2 lỗi**. Method này được gọi ở cả 2 đường vào form: `clickAddUserButton()` và `clickAddUserTab()` (bản override trong `UserPage`, gọi `super.clickAddUserTab()` rồi chờ form).
+    - **Lớp bảo vệ thêm:** các hàm `fillUserName/fillEmail/fillFirstName/fillLastName/fillPassword` dùng `fillAndVerify()` ([base.page.ts](../src/pages/base.page.ts)) — điền xong kiểm tra ô **đó** có đúng giá trị không, sai thì điền lại. Ở trang này kiểm tra từng ô là đủ (khác trang login): ô đang điền bị trống nên chính `fillAndVerify()` của ô đó phát hiện ra; ô Password bị nối thêm chữ thì vô hại vì `fillPassword()` (nếu test có gọi) dùng `fill()` **ghi đè** toàn bộ ô.
+    - ✅ Bản sửa `waitForAddUserFormReady()` (commit `e86bb67`) **đã được xác nhận trên CI**: chạy tay workflow với lựa chọn `all` — cả chromium, firefox, webkit đều pass (trước đó: 8 test fail trên firefox, 6 trên webkit).
 - **All Users** — có ô tìm kiếm (`Search Users`), sau khi search ra kết quả có thể hover vào tên user để hiện link `Delete`. Xóa user cần 2 bước: bấm `Delete` → điều hướng sang trang **Confirm Deletion** (có nút `Confirm Deletion`, và nếu user có nội dung liên quan — bài viết, comment — sẽ hiện thêm radio option `Delete all content.` cần chọn trước khi xác nhận được).
   - **Lưu ý khi test:** sau khi bấm `Delete`, trang điều hướng sang confirm-deletion cần chờ `page.waitForLoadState('domcontentloaded')` trước khi thao tác tiếp — nếu không chờ, nút `Confirm Deletion` có thể chưa sẵn sàng.
   - Nút `Confirm Deletion` có 2 trạng thái: **enabled ngay** (user không có content liên quan) hoặc **disabled cho tới khi chọn radio `Delete all content.`** — test cleanup phải kiểm tra `isEnabled()` trước, xử lý rẽ nhánh.
@@ -103,14 +124,16 @@ Các khu vực này đã có sẵn khung folder trong `src/pages/dashboard/` và
 
 Các lỗi ở mục 1.1, 1.3 (Add User) và 1.4 có chung một bản chất: **test thao tác đúng lúc JavaScript của WordPress đang thay đổi trang**.
 
-- Nhiều đoạn JS của WordPress chạy **sau** sự kiện `load` — qua `setTimeout` (tự focus ô Username), khởi tạo muộn (`user-profile.js` focus ô Password), hoặc có độ trễ theo thao tác chuột (`hoverIntent`). Vì vậy chỉ chờ `load` (`waitForPageLoad()`) là **chưa đủ** để chắc chắn trang đã "đứng yên".
-- Các lỗi này là **flaky**: lúc pass lúc fail tùy tốc độ máy. Chromium thường nhanh nên ít gặp; Firefox/WebKit trên máy CI chậm hơn nên hay lộ ra — đã gặp thực tế: chromium pass hết, 7 test Add User fail trên firefox.
+- Nhiều đoạn JS của WordPress chạy **sau** sự kiện `load` — qua `setTimeout` (tự focus ô Username), tải thêm script rồi mới khởi tạo (`zxcvbn` → `generatePassword()` ở trang Add User), hoặc có độ trễ theo thao tác chuột (`hoverIntent`). Vì vậy chỉ chờ `load` (`waitForPageLoad()`) là **chưa đủ** để chắc chắn trang đã sẵn sàng.
+- Các lỗi này là **flaky**: lúc pass lúc fail tùy tốc độ máy và mạng. Chromium thường nhanh nên ít gặp; Firefox/WebKit trên máy CI chậm hơn nên hay lộ ra — đã gặp thực tế: chromium pass hết, 7–8 test Add User fail trên firefox.
+- **Vì sao local pass mà CI fail?** Máy CI của GitHub đặt ở nước ngoài, cấu hình yếu hơn → tải script chậm hơn hẳn (zxcvbn ~400KB mất 200–870ms). Ở local, lúc test kịp thao tác thì script thường đã tải xong → lỗi **vẫn tồn tại** nhưng gần như không bao giờ rơi trúng. "Chạy local pass" **không** chứng minh được lỗi timing đã hết.
 
 **Nguyên tắc áp dụng:**
-1. Thao tác xong phải **kiểm tra kết quả thật** (giá trị ô, phần tử hiện ra...), sai thì **thử lại** bằng `expect(async () => {...}).toPass()` — không giả định thao tác luôn thành công.
-2. Khi thử lại, thử lại **từ bước tạo ra trạng thái cần thiết** (VD: đưa chuột ra rồi hover lại, chứ không chỉ click lại), và đặt timeout ngắn cho từng thao tác bên trong (`{ timeout: 1000–2000 }`) để vòng thử lại kịp chạy nhiều lần.
-3. Form nhiều ô rồi submit: kiểm tra **trạng thái cuối cùng của cả form** trước khi submit nếu các ô có thể làm hỏng nhau (như trang login).
-4. **Không** dùng `page.waitForTimeout(...)` (chờ cố định vài giây): máy nhanh thì phí thời gian, máy chậm thì vẫn có thể chưa đủ.
-5. Bọc cách xử lý trong **POM** (`login()`, `logout()`, `fillAndVerify()`...) để mọi test tự động được bảo vệ, không phải sửa từng file test.
+1. Trước khi thao tác, chờ **dấu hiệu nhìn thấy được** cho biết JS của trang đã khởi tạo xong (VD: ô Password đã có mật khẩu tự sinh ở trang Add User) — không chỉ chờ `load`. Tìm dấu hiệu này bằng cách đọc mã nguồn JS của trang hoặc quan sát trace.
+2. Thao tác xong phải **kiểm tra kết quả thật** (giá trị ô, phần tử hiện ra...), sai thì **thử lại** bằng `expect(async () => {...}).toPass()` — không giả định thao tác luôn thành công.
+3. Khi thử lại, thử lại **từ bước tạo ra trạng thái cần thiết** (VD: đưa chuột ra rồi hover lại, chứ không chỉ click lại), và đặt timeout ngắn cho từng thao tác bên trong (`{ timeout: 1000–2000 }`) để vòng thử lại kịp chạy nhiều lần.
+4. Form nhiều ô rồi submit: kiểm tra **trạng thái cuối cùng của cả form** trước khi submit nếu các ô có thể làm hỏng nhau (như trang login).
+5. **Không** dùng `page.waitForTimeout(...)` (chờ cố định vài giây): máy nhanh thì phí thời gian, máy chậm thì vẫn có thể chưa đủ.
+6. Bọc cách xử lý trong **POM** (`login()`, `logout()`, `fillAndVerify()`...) để mọi test tự động được bảo vệ, không phải sửa từng file test.
 
 **Về CI:** push/PR mặc định chỉ chạy chromium (xem phần CI trong [README.md](../README.md#ci)), nên các lỗi kiểu này có thể **không bị phát hiện** trên CI. Khi sửa code liên quan tới các trang trên, hoặc trước khi merge thay đổi lớn, nên chạy đủ 3 browser — chạy tay workflow với lựa chọn `all`, hoặc `npx playwright test` ở local.
